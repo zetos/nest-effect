@@ -18,9 +18,7 @@ export class EffectValidationPipe implements PipeTransform {
         return Schema.decodeUnknownSync(metadata.metatype)(value);
       } catch (error) {
         if (ParseResult.isParseError(error)) {
-          throw new BadRequestException(
-            `Validation failed: ${ParseResult.TreeFormatter.formatErrorSync(error)}`,
-          );
+          throw this.createValidationError(error, metadata);
         }
         throw error;
       }
@@ -33,5 +31,66 @@ export class EffectValidationPipe implements PipeTransform {
     metatype: unknown,
   ): metatype is Schema.Schema<unknown, unknown> {
     return Schema.isSchema(metatype);
+  }
+
+  private createValidationError(
+    error: ParseResult.ParseError,
+    metadata: ArgumentMetadata,
+  ): BadRequestException {
+    const fieldName = this.getFieldName(metadata);
+    const formattedErrors = ParseResult.TreeFormatter.formatErrorSync(error);
+
+    return new BadRequestException({
+      message: 'Validation failed',
+      field: fieldName,
+      type: metadata.type,
+      errors: formattedErrors,
+      details: this.extractValidationDetails(error),
+    });
+  }
+
+  private getFieldName(metadata: ArgumentMetadata): string {
+    // Get the parameter name from metadata
+    if (metadata.data) {
+      return metadata.data;
+    }
+
+    // Fallback based on type
+    switch (metadata.type) {
+      case 'body':
+        return 'request body';
+      case 'param':
+        return 'path parameter';
+      case 'query':
+        return 'query parameter';
+      default:
+        return 'input';
+    }
+  }
+
+  private extractValidationDetails(error: ParseResult.ParseError): unknown[] {
+    // Extract specific validation issues for better debugging
+    const issues: unknown[] = [];
+
+    // Walk through the error tree to extract specific issues
+    const collectIssues = (issue: ParseResult.ParseIssue): void => {
+      if ('path' in issue && 'message' in issue) {
+        issues.push({
+          path: issue.path,
+          message: issue.message,
+        });
+      }
+
+      if ('issue' in issue) {
+        collectIssues(issue.issue);
+      }
+
+      if ('issues' in issue && Array.isArray(issue.issues)) {
+        issue.issues.forEach(collectIssues);
+      }
+    };
+
+    collectIssues(error.issue);
+    return issues;
   }
 }
