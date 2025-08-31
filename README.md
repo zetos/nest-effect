@@ -1,37 +1,92 @@
+# NestJS + Effect Integration PoC
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <span style="font-size: 2em; margin: 0 20px;">+</span>
+  <a href="https://effect.website/" target="blank"><img src="https://effect.website/images/logos/effect-logo.svg" width="120" alt="Effect Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  A proof-of-concept integration of <strong>Effect</strong> (functional programming library) with <strong>NestJS</strong> framework.
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This project demonstrates how to integrate [Effect](https://effect.website/) - a powerful TypeScript library for functional programming - with the [NestJS](https://nestjs.com/) framework. It showcases:
 
-## Project setup
+- **Effect Schema validation** using a custom validation pipe
+- **Effect execution** through a custom interceptor
+- **Type-safe error handling** with automatic HTTP status code mapping
+- **Functional programming patterns** in a NestJS application
+
+### Key Features
+
+- 🔧 **Custom EffectValidationPipe** - Validates incoming requests using Effect Schema
+- 🚀 **Custom EffectInterceptor** - Automatically executes Effect computations and handles errors
+- 📝 **Rich Error Messages** - Detailed validation errors with field context
+- 🎯 **Type Safety** - Full TypeScript support with proper Effect types
+- 🔄 **Seamless Integration** - Works alongside regular NestJS controllers and services
+
+### Project Structure
+
+```
+src/
+├── modules/cat/           # Example module demonstrating Effect usage
+│   ├── cat.controller.ts  # Controller returning Effect computations
+│   ├── cat.service.ts     # Service using Effect for operations
+│   ├── cat.dto.ts         # Effect Schema-based DTOs
+│   └── cat.type.ts        # Effect Schema type definitions
+└── shared/                # Effect integration components
+    ├── effect.interceptor.ts       # Executes Effects and handles errors
+    └── effect-validation.pipe.ts   # Validates using Effect Schema
+```
+
+### How It Works
+
+1. **Request Validation**: The `EffectValidationPipe` validates incoming requests using Effect Schema, providing detailed error messages for invalid data.
+
+2. **Effect Execution**: Controllers return `Effect.Effect<T>` computations instead of direct values.
+
+3. **Automatic Processing**: The `EffectInterceptor` automatically detects Effect return values, executes them, and converts errors to appropriate HTTP responses.
+
+4. **Error Handling**: Effect errors are automatically mapped to proper HTTP status codes (400 for validation errors, 404 for not found, etc.).
+
+## Example Usage
+
+```typescript
+// DTO with Effect Schema validation
+export class CatDto extends Schema.Class<CatDto>('CatDto')({
+  name: Schema.String,
+}) {}
+
+// Controller returning Effect computations
+@Controller('cats')
+export class CatController {
+  @Post()
+  createCat(@Body() catDto: CatDto): Effect.Effect<string, ParseError> {
+    return this.catService.createCat(catDto.name);
+  }
+
+  @Get(':id')
+  getCat(@Param('id') id: string): Effect.Effect<Cat, Error> {
+    return this.catService.getCat(id);
+  }
+}
+```
+
+The interceptor automatically handles the Effect execution and error mapping:
+
+- ✅ Validation errors → 400 Bad Request
+- ✅ Not found errors → 404 Not Found
+- ✅ Other errors → 500 Internal Server Error
+
+## Project Setup
 
 ```bash
 $ pnpm install
 ```
 
-## Compile and run the project
+## Compile and Run the Project
 
 ```bash
 # development
@@ -44,7 +99,13 @@ $ pnpm run start:dev
 $ pnpm run start:prod
 ```
 
-## Run tests
+## API Endpoints
+
+- `GET /cats` - Get all cats
+- `POST /cats` - Create a new cat (requires `name` in body)
+- `GET /cats/:id` - Get a specific cat by ID
+
+## Run Tests
 
 ```bash
 # unit tests
@@ -57,42 +118,60 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
-## Deployment
+## Key Components
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### EffectValidationPipe
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Validates incoming requests using Effect Schema:
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+```typescript
+@Injectable()
+export class EffectValidationPipe implements PipeTransform {
+  transform(value: unknown, metadata: ArgumentMetadata): unknown {
+    // Validates using Effect Schema and provides detailed error messages
+  }
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### EffectInterceptor
+
+Automatically executes Effect computations and handles errors:
+
+```typescript
+@Injectable()
+export class EffectInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    // Detects Effect return values and executes them
+    // Maps Effect errors to appropriate HTTP responses
+  }
+}
+```
+
+## Benefits of This Integration
+
+- **🔍 Better Error Handling**: Rich validation errors with field context
+- **🎯 Type Safety**: Full TypeScript support with Effect types
+- **🚀 Performance**: Optimized execution path for both Effects and regular values
+- **🔧 Maintainability**: Clean separation of concerns with reusable components
+- **📚 Functional Programming**: Leverage Effect's powerful functional programming patterns
 
 ## Resources
 
-Check out a few resources that may come in handy when working with NestJS:
+### NestJS
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- [NestJS Documentation](https://docs.nestjs.com)
+- [NestJS Discord](https://discord.gg/G7Qnnhy)
 
-## Support
+### Effect
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- [Effect Documentation](https://effect.website/docs)
+- [Effect GitHub](https://github.com/Effect-TS/effect)
+- [Effect Discord](https://discord.gg/effect-ts)
 
-## Stay in touch
+## Contributing
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+This is a proof-of-concept project. Feel free to fork and experiment with different integration approaches!
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is [MIT licensed](LICENSE).
