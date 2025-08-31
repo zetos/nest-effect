@@ -27,3 +27,11 @@
 - Controllers: `*.controller.ts`, Services: `*.service.ts`, DTOs: `*.dto.ts`
 - Types: `*.type.ts` with both Schema and TypeScript type exports
 - Use PascalCase for classes/schemas, camelCase for variables/functions
+
+## Testing Preferences
+
+- E2E tests: Use PactumJS instead of SuperTest for cleaner API testing
+- Prefer `expectJsonMatchStrict()` for precise response validation
+- Test structure: Group tests by endpoint, include success/error scenarios
+- Setup: Use `beforeAll`/`afterAll` for app lifecycle, `beforeAll` for test data setup
+- Error testing: Verify both status codes and error response structure
