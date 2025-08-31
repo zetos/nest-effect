@@ -47,6 +47,14 @@ export class EffectInterceptor implements NestInterceptor {
       });
     }
 
+    // Handle NoSuchElementException from Effect.fromNullable
+    if (error && typeof error === 'object' && 'message' in error) {
+      const errorObj = error as { message: string; toString(): string };
+      if (errorObj.toString().includes('NoSuchElementException')) {
+        return new NotFoundException('Resource not found');
+      }
+    }
+
     // Handle null/undefined errors from Effect.fromNullable
     if (error === null || error === undefined) {
       return new NotFoundException('Resource not found');
