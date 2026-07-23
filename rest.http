@@ -1,0 +1,25 @@
+### Get Fibonacci
+GET http://localhost:3000/crows/fib
+
+### Get Fibonacci Parallel
+GET http://localhost:3000/crows/fibP
+
+### Get Sleep
+GET http://localhost:3000/crows/sleep
+
+### Get Sleep Effect
+GET http://localhost:3000/crows/sleep-effect
+
+### Get All Cats
+GET http://localhost:3000/cats
+
+### Create Cat
+POST http://localhost:3000/cats
+Content-Type: application/json
+
+{
+  "name": "Whiskers"
+}
+
+### Get Cat By ID
+GET http://localhost:3000/cats/1

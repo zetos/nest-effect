@@ -8,7 +8,9 @@ export class CatService {
   db: Map<string, Cat> = new Map(); // Simulate a external DB
 
   getCats(): Effect.Effect<Cat[]> {
-    return Effect.succeed(Array.from(this.db.values()));
+    const result = Effect.succeed(Array.from(this.db.values()));
+    console.log('getCats about to return');
+    return result;
   }
 
   createCat(name: string): Effect.Effect<string, ParseError> {
@@ -26,6 +28,7 @@ export class CatService {
 
       this.db.set(cat.id, cat);
 
+      console.log('createCat about to return');
       return cat.id;
     });
   }
@@ -34,6 +37,8 @@ export class CatService {
     // New return type with Effect
     const cat = this.db.get(id);
 
-    return Effect.fromNullable(cat); // Convert a nullable value in a Effect
+    const result = Effect.fromNullable(cat); // Convert a nullable value in a Effect
+    console.log('getCat about to return');
+    return result;
   }
 }
