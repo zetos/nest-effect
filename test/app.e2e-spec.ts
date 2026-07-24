@@ -39,7 +39,51 @@ describe('Cats API (e2e)', () => {
       await spec()
         .post('/cats')
         .withJson({ invalidField: 'test' })
-        .expectStatus(400);
+        .expectStatus(400)
+        .expectJsonMatchStrict({
+          message: 'Validation failed',
+          field: 'request body',
+          type: 'body',
+          errors: [{ _tag: 'Missing', path: ['name'], message: 'is missing' }],
+        });
+    });
+
+    it('should reject a non-string name', async () => {
+      await spec()
+        .post('/cats')
+        .withJson({ name: 123 })
+        .expectStatus(400)
+        .expectJsonMatchStrict({
+          message: 'Validation failed',
+          field: 'request body',
+          type: 'body',
+          errors: [
+            {
+              _tag: 'Type',
+              path: ['name'],
+              message: 'Expected string, actual 123',
+            },
+          ],
+        });
+    });
+
+    it('should reject a null name', async () => {
+      await spec()
+        .post('/cats')
+        .withJson({ name: null })
+        .expectStatus(400)
+        .expectJsonMatchStrict({
+          message: 'Validation failed',
+          field: 'request body',
+          type: 'body',
+          errors: [
+            {
+              _tag: 'Type',
+              path: ['name'],
+              message: 'Expected string, actual null',
+            },
+          ],
+        });
     });
 
     it('should create a cat even with empty name (no validation on empty string)', async () => {

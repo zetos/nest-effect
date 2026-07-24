@@ -1,30 +1,33 @@
 import {
   ArgumentMetadata,
+  BadRequestException,
   Injectable,
   PipeTransform,
-  BadRequestException,
 } from '@nestjs/common';
-import { Schema } from 'effect';
-import { ParseResult } from 'effect';
+import { Either, ParseResult, Schema } from 'effect';
 
+/**
+ * Uses Effect Schema classes as Nest DTOs. Nest exposes a parameter's runtime
+ * class through metatype, which lets the pipe find and decode Schema.Class DTOs.
+ */
 @Injectable()
 export class EffectValidationPipe implements PipeTransform {
   transform(value: unknown, metadata: ArgumentMetadata): unknown {
-    // metadata.metatype is equal to the type given to the @Body() or @Param
-    // param properties
-    if (metadata.metatype && this.isEffectSchema(metadata.metatype)) {
-      // Use Effect Schema decode to validate and transform the value
-      try {
-        return Schema.decodeUnknownSync(metadata.metatype)(value);
-      } catch (error) {
-        if (ParseResult.isParseError(error)) {
-          throw this.createValidationError(error, metadata);
-        }
-        throw error;
-      }
+    if (!metadata.metatype || !this.isEffectSchema(metadata.metatype)) {
+      return value;
     }
 
-    return value;
+    // Request input is unknown. Either keeps an expected validation failure as
+    // data, while errors: 'all' reports every invalid field in one response.
+    const result = Schema.decodeUnknownEither(metadata.metatype, {
+      errors: 'all',
+    })(value);
+
+    if (Either.isRight(result)) {
+      return result.right;
+    }
+
+    throw this.createValidationError(result.left, metadata);
   }
 
   private isEffectSchema(
@@ -38,24 +41,21 @@ export class EffectValidationPipe implements PipeTransform {
     metadata: ArgumentMetadata,
   ): BadRequestException {
     const fieldName = this.getFieldName(metadata);
-    const formattedErrors = ParseResult.TreeFormatter.formatErrorSync(error);
 
     return new BadRequestException({
       message: 'Validation failed',
       field: fieldName,
       type: metadata.type,
-      errors: formattedErrors,
-      details: this.extractValidationDetails(error),
+      // ArrayFormatter flattens ParseIssue trees into path/message entries.
+      errors: ParseResult.ArrayFormatter.formatErrorSync(error),
     });
   }
 
   private getFieldName(metadata: ArgumentMetadata): string {
-    // Get the parameter name from metadata
     if (metadata.data) {
       return metadata.data;
     }
 
-    // Fallback based on type
     switch (metadata.type) {
       case 'body':
         return 'request body';
@@ -66,31 +66,5 @@ export class EffectValidationPipe implements PipeTransform {
       default:
         return 'input';
     }
-  }
-
-  private extractValidationDetails(error: ParseResult.ParseError): unknown[] {
-    // Extract specific validation issues for better debugging
-    const issues: unknown[] = [];
-
-    // Walk through the error tree to extract specific issues
-    const collectIssues = (issue: ParseResult.ParseIssue): void => {
-      if ('path' in issue && 'message' in issue) {
-        issues.push({
-          path: issue.path,
-          message: issue.message,
-        });
-      }
-
-      if ('issue' in issue) {
-        collectIssues(issue.issue);
-      }
-
-      if ('issues' in issue && Array.isArray(issue.issues)) {
-        issue.issues.forEach(collectIssues);
-      }
-    };
-
-    collectIssues(error.issue);
-    return issues;
   }
 }
