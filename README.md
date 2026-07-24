@@ -86,6 +86,25 @@ The interceptor automatically handles the Effect execution and error mapping:
 $ pnpm install
 ```
 
+The install hook patches the project-local TypeScript 7 compiler with the
+Effect language service. No global TypeScript or language-server package is
+required.
+
+## Developer Tooling
+
+```bash
+# TypeScript and Effect diagnostics
+$ pnpm run typecheck
+$ pnpm run diagnostics
+
+# Type-aware linting with Oxlint
+$ pnpm run lint
+```
+
+OpenCode is configured in `opencode.json` to use the patched Effect TypeScript
+server instead of its built-in TypeScript server. Restart OpenCode after
+installing dependencies or changing its configuration.
+
 ## Compile and Run the Project
 
 ```bash

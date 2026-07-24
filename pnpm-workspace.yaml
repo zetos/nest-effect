@@ -1,3 +1,7 @@
 allowBuilds:
   '@nestjs/core': true
+  '@swc/core': true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@effect/tsgo-linux-x64@0.24.3'
+  - '@effect/tsgo-win32-x64@0.24.3'
