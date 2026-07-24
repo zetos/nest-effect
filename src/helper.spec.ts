@@ -1,4 +1,5 @@
-import { fib, fibP, sleep } from './helper';
+import { Effect } from 'effect';
+import { fib, fibE, fibP, sleep } from './helper';
 
 describe('helper', () => {
   describe('fib', () => {
@@ -52,6 +53,67 @@ describe('helper', () => {
         const asyncResult = await fibP(n);
         expect(asyncResult).toBe(syncResult);
       }
+    });
+
+    it('should return fibP(44) without exhausting resources', async () => {
+      await expect(fibP(44)).resolves.toBe(701408733);
+    });
+
+    it('should yield to the event loop during large calculations', async () => {
+      let completed = false;
+      const calculation = fibP(10_000).then((result) => {
+        completed = true;
+        return result;
+      });
+
+      await new Promise<void>((resolve) => setImmediate(resolve));
+
+      expect(completed).toBe(false);
+      await expect(calculation).resolves.toBe(Number.POSITIVE_INFINITY);
+    });
+  });
+
+  describe('fibE', () => {
+    it('should return an Effect', () => {
+      expect(Effect.isEffect(fibE(1))).toBe(true);
+    });
+
+    it('should match synchronous fib results', async () => {
+      const inputs = [1, 2, 3, 5, 10, 15];
+      for (const n of inputs) {
+        const syncResult = fib(n);
+        const effectResult = await Effect.runPromise(fibE(n));
+        expect(effectResult).toBe(syncResult);
+      }
+    });
+
+    it('should return fibE(44) without blocking recursively', async () => {
+      await expect(Effect.runPromise(fibE(44))).resolves.toBe(701408733);
+    });
+
+    it('should cooperatively yield during large calculations', async () => {
+      let completed = false;
+      let observedBeforeCompletion = false;
+
+      await Effect.runPromise(
+        Effect.all(
+          [
+            fibE(10_000).pipe(
+              Effect.tap(() =>
+                Effect.sync(() => {
+                  completed = true;
+                }),
+              ),
+            ),
+            Effect.sync(() => {
+              observedBeforeCompletion = !completed;
+            }),
+          ],
+          { concurrency: 'unbounded' },
+        ),
+      );
+
+      expect(observedBeforeCompletion).toBe(true);
     });
   });
 
