@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { Cat } from './cat.type';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Effect, Schema } from 'effect';
 import { ParseError } from 'effect/ParseResult';
+import { Cat } from './cat.type';
 
 @Injectable()
 export class CatService {
@@ -33,12 +33,11 @@ export class CatService {
     });
   }
 
-  getCat(id: string): Effect.Effect<Cat, Error> {
-    // New return type with Effect
-    const cat = this.db.get(id);
-
-    const result = Effect.fromNullable(cat); // Convert a nullable value in a Effect
-    console.log('getCat about to return');
-    return result;
+  getCat(id: string): Effect.Effect<Cat, NotFoundException> {
+    return Effect.suspend(() =>
+      Effect.fromNullable(this.db.get(id)).pipe(
+        Effect.mapError(() => new NotFoundException('Resource not found')),
+      ),
+    );
   }
 }

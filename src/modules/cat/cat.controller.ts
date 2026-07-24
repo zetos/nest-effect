@@ -1,9 +1,16 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { CatService } from './cat.service';
-import type { Cat } from './cat.type';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { Effect } from 'effect';
 import { ParseError } from 'effect/ParseResult';
 import { CatDto } from './cat.dto';
+import { CatService } from './cat.service';
+import type { Cat } from './cat.type';
 
 @Controller('cats')
 export class CatController {
@@ -20,7 +27,7 @@ export class CatController {
   }
 
   @Get(':id')
-  getCat(@Param('id') id: string): Effect.Effect<Cat, Error> {
+  getCat(@Param('id') id: string): Effect.Effect<Cat, NotFoundException> {
     return this.catService.getCat(id);
   }
 }
