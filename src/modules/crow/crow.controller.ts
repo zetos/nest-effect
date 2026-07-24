@@ -17,6 +17,11 @@ export class CrowController {
     return this.crowService.getFibP();
   }
 
+  @Get('fibE')
+  getFibE(): Effect.Effect<Crow> {
+    return this.crowService.getFibE();
+  }
+
   @Get('sleep')
   getSleep(): Effect.Effect<Sleep> {
     return this.crowService.getSleep();

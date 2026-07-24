@@ -4,6 +4,9 @@ GET http://localhost:3000/crows/fib
 ### Get Fibonacci Parallel
 GET http://localhost:3000/crows/fibP
 
+### Get Fibonacci Effect
+GET http://localhost:3000/crows/fibE
+
 ### Get Sleep
 GET http://localhost:3000/crows/sleep
 

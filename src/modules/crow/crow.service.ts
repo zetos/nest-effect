@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Crow, Sleep } from './crow.type';
 import { Effect } from 'effect';
-import { fib, fibP, sleep } from '../../helper';
+import { fib, fibE, fibP, sleep } from '../../helper';
 
 @Injectable()
 export class CrowService {
@@ -16,6 +16,12 @@ export class CrowService {
       fibP(44).then((number) => ({ number })),
     );
     console.log('getFibP about to return');
+    return result;
+  }
+
+  getFibE(): Effect.Effect<Crow> {
+    const result = fibE(44).pipe(Effect.map((number) => ({ number })));
+    console.log('getFibE about to return');
     return result;
   }
 

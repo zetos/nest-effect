@@ -97,4 +97,13 @@ describe('Cats API (e2e)', () => {
         });
     });
   });
+
+  describe('/crows/fibE (GET)', () => {
+    it('should return the non-blocking Effect Fibonacci result', async () => {
+      await spec()
+        .get('/crows/fibE')
+        .expectStatus(200)
+        .expectJsonMatchStrict({ number: 701408733 });
+    });
+  });
 });
