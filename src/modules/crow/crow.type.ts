@@ -1,7 +1,7 @@
 import { Schema } from 'effect';
 
 export const Crow = Schema.Struct({
-  number: Schema.Number,
+  number: Schema.Finite,
 });
 
 export type Crow = typeof Crow.Type;

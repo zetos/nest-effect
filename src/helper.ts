@@ -51,13 +51,13 @@ const runFibE = (n: number, state: FibState): Effect.Effect<number> =>
 
     return nextState.index > n
       ? Effect.succeed(nextState.current)
-      : Effect.yieldNow().pipe(Effect.flatMap(() => runFibE(n, nextState)));
+      : Effect.yieldNow.pipe(Effect.flatMap(() => runFibE(n, nextState)));
   });
 
 const fibE = (n: number): Effect.Effect<number> =>
   n <= 2
     ? Effect.succeed(1)
-    : Effect.yieldNow().pipe(Effect.flatMap(() => runFibE(n, initialFibState)));
+    : Effect.yieldNow.pipe(Effect.flatMap(() => runFibE(n, initialFibState)));
 
 const sleep: (ms: number) => Promise<void> = promisify(setTimeout);
 

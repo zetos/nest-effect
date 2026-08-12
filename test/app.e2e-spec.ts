@@ -44,7 +44,7 @@ describe('Cats API (e2e)', () => {
           message: 'Validation failed',
           field: 'request body',
           type: 'body',
-          errors: [{ _tag: 'Missing', path: ['name'], message: 'is missing' }],
+          errors: [{ path: ['name'], message: 'Missing key' }],
         });
     });
 
@@ -59,9 +59,8 @@ describe('Cats API (e2e)', () => {
           type: 'body',
           errors: [
             {
-              _tag: 'Type',
               path: ['name'],
-              message: 'Expected string, actual 123',
+              message: 'Expected string',
             },
           ],
         });
@@ -78,9 +77,8 @@ describe('Cats API (e2e)', () => {
           type: 'body',
           errors: [
             {
-              _tag: 'Type',
               path: ['name'],
-              message: 'Expected string, actual null',
+              message: 'Expected string',
             },
           ],
         });

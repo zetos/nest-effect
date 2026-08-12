@@ -2,10 +2,10 @@ import {
   BadRequestException,
   CallHandler,
   ExecutionContext,
-  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { jest } from '@jest/globals';
 import { EventEmitter } from 'node:events';
 import { firstValueFrom, of } from 'rxjs';
 import { Effect, Schema } from 'effect';
@@ -63,7 +63,7 @@ describe('EffectInterceptor', () => {
 
   it('maps schema failures without exposing FiberFailure', async () => {
     const { context } = makeContext();
-    const effect = Schema.decodeUnknown(Schema.Number)('not a number');
+    const effect = Schema.decodeUnknownEffect(Schema.Finite)('not a number');
 
     await expect(
       firstValueFrom(interceptor.intercept(context, makeHandler(effect))),
@@ -85,7 +85,7 @@ describe('EffectInterceptor', () => {
       response: {
         message: 'Internal Server Error',
       },
-    } satisfies Partial<InternalServerErrorException>);
+    });
   });
 
   it('interrupts the Effect when the request is aborted', async () => {
@@ -99,7 +99,7 @@ describe('EffectInterceptor', () => {
     // Effect.never keeps the fiber alive; onInterrupt proves cancellation
     // reached the Effect runtime instead of only closing the Observable.
     const effect = Effect.sync(start).pipe(
-      Effect.zipRight(Effect.never),
+      Effect.andThen(Effect.never),
       Effect.onInterrupt(() => Effect.sync(interrupted)),
     );
 
@@ -119,7 +119,7 @@ describe('EffectInterceptor', () => {
       (resolve) => (interrupted = resolve),
     );
     const effect = Effect.sync(start).pipe(
-      Effect.zipRight(Effect.never),
+      Effect.andThen(Effect.never),
       Effect.onInterrupt(() => Effect.sync(interrupted)),
     );
 

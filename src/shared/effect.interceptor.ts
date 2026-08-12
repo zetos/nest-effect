@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
-import { Cause, Effect, Exit, Option, ParseResult } from 'effect';
+import { Cause, Effect, Exit, Option, Schema, SchemaIssue } from 'effect';
 
 type AbortEmitter = {
   readonly aborted?: boolean;
@@ -18,6 +18,10 @@ type AbortEmitter = {
   once(event: string, listener: () => void): void;
   removeListener(event: string, listener: () => void): void;
 };
+
+const isRunnableEffect = (
+  value: unknown,
+): value is Effect.Effect<unknown, unknown> => Effect.isEffect(value);
 
 /**
  * Bridges Nest's Observable response pipeline with the Effect runtime.
@@ -36,13 +40,13 @@ export class EffectInterceptor implements NestInterceptor {
       // A handler may emit more than once; mergeMap does not discard an
       // earlier Effect when a later value arrives.
       mergeMap((data) =>
-        Effect.isEffect(data) ? this.runEffect(data, context) : of(data),
+        isRunnableEffect(data) ? this.runEffect(data, context) : of(data),
       ),
     );
   }
 
   private runEffect(
-    effect: Effect.Effect<unknown, unknown, unknown>,
+    effect: Effect.Effect<unknown, unknown>,
     context: ExecutionContext,
   ): Observable<unknown> {
     return new Observable((subscriber) => {
@@ -55,27 +59,24 @@ export class EffectInterceptor implements NestInterceptor {
 
       // Unlike runPromise, runPromiseExit keeps typed failures, defects, and
       // interruption distinct inside Exit and Cause.
-      // The runtime guard cannot recover R, so controller Effects must have
-      // their environment fully provided before reaching this boundary.
-      void Effect.runPromiseExit(
-        effect as Effect.Effect<unknown, unknown, never>,
-        { signal: controller.signal },
-      ).then((exit) => {
-        removeAbortListeners();
+      void Effect.runPromiseExit(effect, { signal: controller.signal }).then(
+        (exit) => {
+          removeAbortListeners();
 
-        if (subscriber.closed) {
-          return;
-        }
-        if (Exit.isSuccess(exit)) {
-          subscriber.next(exit.value);
-          subscriber.complete();
-        } else if (Cause.isInterruptedOnly(exit.cause)) {
-          // Cancellation is normal lifecycle behavior, not an HTTP 500.
-          subscriber.complete();
-        } else {
-          subscriber.error(this.mapCause(exit.cause));
-        }
-      });
+          if (subscriber.closed) {
+            return;
+          }
+          if (Exit.isSuccess(exit)) {
+            subscriber.next(exit.value);
+            subscriber.complete();
+          } else if (Cause.hasInterruptsOnly(exit.cause)) {
+            // Cancellation is normal lifecycle behavior, not an HTTP 500.
+            subscriber.complete();
+          } else {
+            subscriber.error(this.mapCause(exit.cause));
+          }
+        },
+      );
 
       // RxJS teardown is another cancellation source, independent of HTTP.
       return () => {
@@ -88,22 +89,21 @@ export class EffectInterceptor implements NestInterceptor {
   private mapCause(cause: Cause.Cause<unknown>): HttpException {
     // Defects represent unexpected bugs. Log their Cause, but do not expose
     // implementation details in the HTTP response.
-    if (Cause.defects(cause).length > 0) {
+    if (Cause.hasDies(cause)) {
       this.logger.error(Cause.pretty(cause));
       return new InternalServerErrorException();
     }
 
-    // failureOption extracts an expected Effect.fail value from the Cause.
-    const failure = Option.getOrUndefined(Cause.failureOption(cause));
+    const failure = Option.getOrUndefined(Cause.findErrorOption(cause));
 
     if (failure instanceof HttpException) {
       return failure;
     }
-    if (ParseResult.isParseError(failure)) {
+    if (Schema.isSchemaError(failure)) {
       return new BadRequestException({
         message: 'Validation failed',
-        // ArrayFormatter produces field paths suitable for an API response.
-        errors: ParseResult.ArrayFormatter.formatErrorSync(failure),
+        errors: SchemaIssue.makeFormatterStandardSchemaV1()(failure.issue)
+          .issues,
       });
     }
 

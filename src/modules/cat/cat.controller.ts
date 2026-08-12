@@ -6,8 +6,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { Effect } from 'effect';
-import { ParseError } from 'effect/ParseResult';
+import { Effect, Schema } from 'effect';
 import { CatDto } from './cat.dto';
 import { CatService } from './cat.service';
 import type { Cat } from './cat.type';
@@ -22,7 +21,7 @@ export class CatController {
   }
 
   @Post()
-  createCat(@Body() catDto: CatDto): Effect.Effect<string, ParseError> {
+  createCat(@Body() catDto: CatDto): Effect.Effect<string, Schema.SchemaError> {
     return this.catService.createCat(catDto.name);
   }
 

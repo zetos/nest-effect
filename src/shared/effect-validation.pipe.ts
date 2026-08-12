@@ -4,7 +4,7 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
-import { Either, ParseResult, Schema } from 'effect';
+import { Result, Schema, SchemaIssue } from 'effect';
 
 /**
  * Uses Effect Schema classes as Nest DTOs. Nest exposes a parameter's runtime
@@ -17,27 +17,27 @@ export class EffectValidationPipe implements PipeTransform {
       return value;
     }
 
-    // Request input is unknown. Either keeps an expected validation failure as
+    // Request input is unknown. Result keeps an expected validation failure as
     // data, while errors: 'all' reports every invalid field in one response.
-    const result = Schema.decodeUnknownEither(metadata.metatype, {
+    const result = Schema.decodeUnknownResult(metadata.metatype, {
       errors: 'all',
     })(value);
 
-    if (Either.isRight(result)) {
-      return result.right;
+    if (Result.isSuccess(result)) {
+      return result.success;
     }
 
-    throw this.createValidationError(result.left, metadata);
+    throw this.createValidationError(result.failure, metadata);
   }
 
   private isEffectSchema(
     metatype: unknown,
-  ): metatype is Schema.Schema<unknown, unknown> {
+  ): metatype is Schema.ConstraintDecoder<unknown> {
     return Schema.isSchema(metatype);
   }
 
   private createValidationError(
-    error: ParseResult.ParseError,
+    error: Schema.SchemaError,
     metadata: ArgumentMetadata,
   ): BadRequestException {
     const fieldName = this.getFieldName(metadata);
@@ -46,8 +46,7 @@ export class EffectValidationPipe implements PipeTransform {
       message: 'Validation failed',
       field: fieldName,
       type: metadata.type,
-      // ArrayFormatter flattens ParseIssue trees into path/message entries.
-      errors: ParseResult.ArrayFormatter.formatErrorSync(error),
+      errors: SchemaIssue.makeFormatterStandardSchemaV1()(error.issue).issues,
     });
   }
 

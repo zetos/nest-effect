@@ -1,3 +1,5 @@
 allowBuilds:
   '@nestjs/core': true
+  '@swc/core': true
+  msgpackr-extract: true
   unrs-resolver: true

@@ -5,7 +5,7 @@ import { EffectValidationPipe } from './effect-validation.pipe';
 // NumberFromString demonstrates that decoding can transform input as well as
 // validate it.
 class RequestDto extends Schema.Class<RequestDto>('RequestDto')({
-  count: Schema.NumberFromString,
+  count: Schema.FiniteFromString,
   name: Schema.String,
 }) {}
 
