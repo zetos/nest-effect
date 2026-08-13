@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { promisify } from 'util';
 import { Effect } from 'effect';
 
@@ -64,4 +65,7 @@ const fibE = (n: number): Effect.Effect<number> =>
 
 const sleep: (ms: number) => Promise<void> = promisify(setTimeout);
 
-export { fib, fibE, fibP, sleep };
+const nestLog = (message: unknown): Effect.Effect<void> =>
+  Effect.sync(() => Logger.log(message));
+
+export { fib, fibE, fibP, nestLog, sleep };

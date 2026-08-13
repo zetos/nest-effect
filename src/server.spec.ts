@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import { Logger } from '@nestjs/common';
 import { Effect } from 'effect';
 import { makeServerProgram, SHUTDOWN_MESSAGE } from './server';
 
@@ -20,7 +21,7 @@ describe('server lifecycle', () => {
         events.push('close');
       }),
     };
-    jest.spyOn(console, 'log').mockImplementation((message) => {
+    jest.spyOn(Logger, 'log').mockImplementation((message) => {
       events.push(String(message));
     });
     const controller = new AbortController();
@@ -44,7 +45,7 @@ describe('server lifecycle', () => {
       listen: jest.fn(async () => undefined),
       close: jest.fn(async () => Promise.reject(closeError)),
     };
-    const consoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const nestLog = jest.spyOn(Logger, 'log').mockImplementation(() => {});
     const controller = new AbortController();
     const server = Effect.runPromise(
       makeServerProgram({ createApp: async () => app, port: 3000 }),
@@ -56,6 +57,6 @@ describe('server lifecycle', () => {
     await expect(server).rejects.toThrow();
 
     expect(app.close).toHaveBeenCalledTimes(1);
-    expect(consoleLog).not.toHaveBeenCalledWith(SHUTDOWN_MESSAGE);
+    expect(nestLog).not.toHaveBeenCalledWith(SHUTDOWN_MESSAGE);
   });
 });

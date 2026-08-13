@@ -1,4 +1,5 @@
-import { Cause, Console, Effect } from 'effect';
+import { Cause, Effect } from 'effect';
+import { nestLog } from './helper';
 
 export const SHUTDOWN_MESSAGE = 'Nest application scope closed successfully.';
 
@@ -33,6 +34,6 @@ export const makeServerProgram = ({
     // Release is also uninterruptible and runs on success, failure, or interruption.
     (app) =>
       Effect.tryPromise({ try: () => app.close(), catch: toUnknownError }).pipe(
-        Effect.andThen(Console.log(SHUTDOWN_MESSAGE)),
+        Effect.andThen(nestLog(SHUTDOWN_MESSAGE)),
       ),
   );
