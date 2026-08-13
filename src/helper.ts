@@ -29,21 +29,24 @@ const advanceFib = (n: number, state: FibState): FibState =>
 
 const fib = (n: number): number => (n <= 2 ? 1 : fib(n - 1) + fib(n - 2));
 
-const yieldToEventLoop = (): Promise<void> =>
-  new Promise((resolve) => setImmediate(resolve));
+const yieldToEventLoop = Effect.callback<void>((resume) => {
+  setImmediate(() => resume(Effect.void));
+});
 
 const runFibP = (n: number, state: FibState): Promise<number> => {
   const nextState = advanceFib(n, state);
 
   return nextState.index > n
     ? Promise.resolve(nextState.current)
-    : yieldToEventLoop().then(() => runFibP(n, nextState));
+    : Effect.runPromise(yieldToEventLoop).then(() => runFibP(n, nextState));
 };
 
 const fibP = (n: number): Promise<number> =>
   n <= 2
     ? Promise.resolve(1)
-    : yieldToEventLoop().then(() => runFibP(n, initialFibState));
+    : Effect.runPromise(yieldToEventLoop).then(() =>
+        runFibP(n, initialFibState),
+      );
 
 const runFibE = (n: number, state: FibState): Effect.Effect<number> =>
   Effect.suspend(() => {
