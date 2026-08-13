@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "pnpm run build && node dist/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -30,13 +30,14 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@effect/tsgo": "0.36.4",
+    "@jest/globals": "^30.4.1",
     "@nestjs/cli": "^11.0.24",
     "@nestjs/schematics": "^11.1.0",
     "@nestjs/testing": "^11.1.28",
     "@swc/core": "^1.13.5",
     "@swc/jest": "^0.2.39",
     "@types/express": "^5.0.6",
-    "@jest/globals": "^30.4.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.13.3",
     "jest": "^30.4.2",
@@ -47,8 +48,7 @@
     "ts-loader": "^9.6.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "7.0.2",
-    "@effect/tsgo": "0.36.4"
+    "typescript": "7.0.2"
   },
   "jest": {
     "moduleFileExtensions": [

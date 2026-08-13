@@ -1,10 +1,17 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { Config, Effect } from 'effect';
+import { AppModule } from './app.module';
+import { makeServerProgram, waitForShutdown } from './server';
 
-async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
-}
+const program = Effect.gen(function* () {
+  const port = yield* Config.port('PORT').pipe(Config.withDefault(3000));
 
-void bootstrap();
+  yield* makeServerProgram({
+    createApp: () => NestFactory.create<NestExpressApplication>(AppModule),
+    port,
+    shutdown: waitForShutdown(),
+  });
+});
+
+void Effect.runPromise(program);
